@@ -10,149 +10,197 @@ import {
   where,
   orderBy,
   Timestamp,
+  FirestoreError,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { Tree } from '../types/tree.types';
 
 const TREES_COLLECTION = 'trees';
 
+class TreeServiceError extends Error {
+  constructor(message: string, public originalError?: unknown) {
+    super(message);
+    this.name = 'TreeServiceError';
+  }
+}
+
 export const treesService = {
   /**
    * Get all trees
    */
   async getAll(): Promise<Tree[]> {
-    const q = query(
-      collection(db, TREES_COLLECTION),
-      orderBy('createdAt', 'desc')
-    );
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as Tree[];
+    try {
+      const q = query(
+        collection(db, TREES_COLLECTION),
+        orderBy('createdAt', 'desc')
+      );
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Tree[];
+    } catch (error) {
+      throw new TreeServiceError('Failed to fetch trees', error);
+    }
   },
 
   /**
    * Get a single tree by ID
    */
   async getById(id: string): Promise<Tree | null> {
-    const docRef = doc(db, TREES_COLLECTION, id);
-    const docSnap = await getDoc(docRef);
-    
-    if (docSnap.exists()) {
-      return { id: docSnap.id, ...docSnap.data() } as Tree;
+    try {
+      const docRef = doc(db, TREES_COLLECTION, id);
+      const docSnap = await getDoc(docRef);
+      
+      if (docSnap.exists()) {
+        return { id: docSnap.id, ...docSnap.data() } as Tree;
+      }
+      return null;
+    } catch (error) {
+      throw new TreeServiceError(`Failed to fetch tree with id: ${id}`, error);
     }
-    return null;
   },
 
   /**
    * Get trees by status
    */
   async getByStatus(status: string): Promise<Tree[]> {
-    const q = query(
-      collection(db, TREES_COLLECTION),
-      where('status', '==', status),
-      orderBy('createdAt', 'desc')
-    );
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as Tree[];
+    try {
+      const q = query(
+        collection(db, TREES_COLLECTION),
+        where('status', '==', status),
+        orderBy('createdAt', 'desc')
+      );
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Tree[];
+    } catch (error) {
+      throw new TreeServiceError(`Failed to fetch trees by status: ${status}`, error);
+    }
   },
 
   /**
    * Get trees by health status
    */
   async getByHealthStatus(healthStatus: string): Promise<Tree[]> {
-    const q = query(
-      collection(db, TREES_COLLECTION),
-      where('healthStatus', '==', healthStatus),
-      orderBy('createdAt', 'desc')
-    );
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as Tree[];
+    try {
+      const q = query(
+        collection(db, TREES_COLLECTION),
+        where('healthStatus', '==', healthStatus),
+        orderBy('createdAt', 'desc')
+      );
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Tree[];
+    } catch (error) {
+      throw new TreeServiceError(`Failed to fetch trees by health status: ${healthStatus}`, error);
+    }
   },
 
   /**
    * Create a new tree
    */
   async create(tree: Omit<Tree, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
-    const docRef = await addDoc(collection(db, TREES_COLLECTION), {
-      ...tree,
-      createdAt: Timestamp.now(),
-      updatedAt: Timestamp.now(),
-    });
-    return docRef.id;
+    try {
+      const docRef = await addDoc(collection(db, TREES_COLLECTION), {
+        ...tree,
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      });
+      return docRef.id;
+    } catch (error) {
+      throw new TreeServiceError('Failed to create tree', error);
+    }
   },
 
   /**
    * Update an existing tree
    */
   async update(id: string, updates: Partial<Tree>): Promise<void> {
-    const docRef = doc(db, TREES_COLLECTION, id);
-    await updateDoc(docRef, {
-      ...updates,
-      updatedAt: Timestamp.now(),
-    });
+    try {
+      const docRef = doc(db, TREES_COLLECTION, id);
+      await updateDoc(docRef, {
+        ...updates,
+        updatedAt: Timestamp.now(),
+      });
+    } catch (error) {
+      throw new TreeServiceError(`Failed to update tree with id: ${id}`, error);
+    }
   },
 
   /**
    * Delete a tree
    */
   async delete(id: string): Promise<void> {
-    await deleteDoc(doc(db, TREES_COLLECTION, id));
+    try {
+      await deleteDoc(doc(db, TREES_COLLECTION, id));
+    } catch (error) {
+      throw new TreeServiceError(`Failed to delete tree with id: ${id}`, error);
+    }
   },
 
   /**
    * Get trees by supplier
    */
   async getBySupplier(supplierId: string): Promise<Tree[]> {
-    const q = query(
-      collection(db, TREES_COLLECTION),
-      where('supplierId', '==', supplierId),
-      orderBy('createdAt', 'desc')
-    );
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as Tree[];
+    try {
+      const q = query(
+        collection(db, TREES_COLLECTION),
+        where('supplierId', '==', supplierId),
+        orderBy('createdAt', 'desc')
+      );
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Tree[];
+    } catch (error) {
+      throw new TreeServiceError(`Failed to fetch trees by supplier: ${supplierId}`, error);
+    }
   },
 
   /**
    * Get trees by nursery location
    */
   async getByNurseryLocation(locationId: string): Promise<Tree[]> {
-    const q = query(
-      collection(db, TREES_COLLECTION),
-      where('nurseryLocationId', '==', locationId),
-      orderBy('createdAt', 'desc')
-    );
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as Tree[];
+    try {
+      const q = query(
+        collection(db, TREES_COLLECTION),
+        where('nurseryLocationId', '==', locationId),
+        orderBy('createdAt', 'desc')
+      );
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Tree[];
+    } catch (error) {
+      throw new TreeServiceError(`Failed to fetch trees by nursery location: ${locationId}`, error);
+    }
   },
 
   /**
    * Get trees by planting site
    */
   async getByPlantingSite(siteId: string): Promise<Tree[]> {
-    const q = query(
-      collection(db, TREES_COLLECTION),
-      where('plantingSiteId', '==', siteId),
-      orderBy('createdAt', 'desc')
-    );
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as Tree[];
+    try {
+      const q = query(
+        collection(db, TREES_COLLECTION),
+        where('plantingSiteId', '==', siteId),
+        orderBy('createdAt', 'desc')
+      );
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Tree[];
+    } catch (error) {
+      throw new TreeServiceError(`Failed to fetch trees by planting site: ${siteId}`, error);
+    }
   },
 };
 
