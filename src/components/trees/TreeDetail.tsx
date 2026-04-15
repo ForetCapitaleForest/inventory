@@ -9,6 +9,7 @@ import {
   CircularProgress,
   Alert,
   Divider,
+  Snackbar,
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -17,28 +18,14 @@ import {
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { treesService } from '../../services/trees.service';
-import { TreeStatus, HealthStatus } from '../../types/tree.types';
-
-const statusColors: Record<TreeStatus, 'default' | 'primary' | 'secondary' | 'success' | 'error'> = {
-  ordered: 'default',
-  in_transit: 'primary',
-  in_nursery: 'secondary',
-  planted: 'success',
-  deceased: 'error',
-};
-
-const healthColors: Record<HealthStatus, 'success' | 'info' | 'warning' | 'error'> = {
-  excellent: 'success',
-  good: 'success',
-  fair: 'warning',
-  poor: 'error',
-  critical: 'error',
-};
+import { statusColors, healthColors } from '../../constants/tree-colors';
+import { useState } from 'react';
 
 export const TreeDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [deleteError, setDeleteError] = useState<string>('');
 
   const { data: tree, isLoading, error } = useQuery({
     queryKey: ['tree', id],
@@ -52,14 +39,18 @@ export const TreeDetail = () => {
       queryClient.invalidateQueries({ queryKey: ['trees'] });
       navigate('/trees');
     },
+    onError: (error: any) => {
+      setDeleteError(error?.message || 'Failed to delete tree. Please try again.');
+    },
   });
 
   const handleDelete = async () => {
     if (tree && window.confirm(`Are you sure you want to delete ${tree.species}?`)) {
+      setDeleteError('');
       try {
         await deleteMutation.mutateAsync(tree.id);
       } catch (error) {
-        console.error('Failed to delete tree:', error);
+        // Error is handled by onError callback
       }
     }
   };
@@ -90,8 +81,12 @@ export const TreeDetail = () => {
   }
 
   const formatDate = (timestamp: any) => {
-    if (!timestamp) return 'N/A';
-    return new Date(timestamp.toMillis()).toLocaleDateString();
+    if (!timestamp || typeof timestamp.toMillis !== 'function') return 'N/A';
+    try {
+      return new Date(timestamp.toMillis()).toLocaleDateString();
+    } catch {
+      return 'N/A';
+    }
   };
 
   return (
@@ -339,6 +334,13 @@ export const TreeDetail = () => {
           </Grid>
         </Grid>
       </Paper>
+
+      <Snackbar
+        open={!!deleteError}
+        autoHideDuration={6000}
+        onClose={() => setDeleteError('')}
+        message={deleteError}
+      />
     </Box>
   );
 };

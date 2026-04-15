@@ -18,6 +18,9 @@ import { Tree, TreeStatus, HealthStatus } from '../../types/tree.types';
 import { Timestamp } from 'firebase/firestore';
 import { useAuth } from '../../contexts/AuthContext';
 
+const DEFAULT_SUPPLIER_ID = 'default';
+const UNKNOWN_USER = 'unknown';
+
 interface TreeFormProps {
   tree?: Tree;
   mode: 'create' | 'edit';
@@ -80,8 +83,32 @@ export const TreeForm = ({ tree, mode }: TreeFormProps) => {
       // Validate required fields
       if (!formData.species || !formData.provenance || !formData.supplierName) {
         setError('Please fill in all required fields');
-        setLoading(false);
         return;
+      }
+
+      // Validate numeric fields are non-negative
+      const numericFields = [
+        { value: formData.initialHeight, name: 'Initial Height' },
+        { value: formData.initialDiameter, name: 'Initial Diameter' },
+        { value: formData.age, name: 'Age' },
+        { value: formData.cost, name: 'Cost' },
+      ];
+
+      for (const field of numericFields) {
+        if (field.value && parseFloat(field.value) < 0) {
+          setError(`${field.name} cannot be negative`);
+          return;
+        }
+      }
+
+      // Validate date logic
+      if (formData.arrivalDate && formData.orderDate) {
+        const orderDate = new Date(formData.orderDate);
+        const arrivalDate = new Date(formData.arrivalDate);
+        if (arrivalDate < orderDate) {
+          setError('Arrival date cannot be before order date');
+          return;
+        }
       }
 
       const treeData: any = {
@@ -89,7 +116,7 @@ export const TreeForm = ({ tree, mode }: TreeFormProps) => {
         commonName: formData.commonName || undefined,
         provenance: formData.provenance,
         status: formData.status,
-        supplierId: formData.supplierId || 'default',
+        supplierId: formData.supplierId || DEFAULT_SUPPLIER_ID,
         supplierName: formData.supplierName,
         purchaseOrderNumber: formData.purchaseOrderNumber || undefined,
         cost: formData.cost ? parseFloat(formData.cost) : undefined,
@@ -104,7 +131,7 @@ export const TreeForm = ({ tree, mode }: TreeFormProps) => {
         soilConditions: formData.soilConditions || undefined,
         photoUrls: tree?.photoUrls || [],
         notes: formData.notes,
-        createdBy: user?.uid || 'unknown',
+        createdBy: user?.uid || UNKNOWN_USER,
       };
 
       if (mode === 'create') {
@@ -114,6 +141,7 @@ export const TreeForm = ({ tree, mode }: TreeFormProps) => {
       }
     } catch (err: any) {
       setError(err.message || 'Failed to save tree');
+    } finally {
       setLoading(false);
     }
   };
@@ -216,6 +244,7 @@ export const TreeForm = ({ tree, mode }: TreeFormProps) => {
                 value={formData.cost}
                 onChange={(e) => handleChange('cost', e.target.value)}
                 InputProps={{ startAdornment: '$' }}
+                inputProps={{ min: 0, step: 0.01 }}
               />
             </Grid>
 
@@ -254,6 +283,7 @@ export const TreeForm = ({ tree, mode }: TreeFormProps) => {
                 label="Initial Height (cm)"
                 value={formData.initialHeight}
                 onChange={(e) => handleChange('initialHeight', e.target.value)}
+                inputProps={{ min: 0 }}
               />
             </Grid>
 
@@ -264,6 +294,7 @@ export const TreeForm = ({ tree, mode }: TreeFormProps) => {
                 label="Initial Diameter (cm)"
                 value={formData.initialDiameter}
                 onChange={(e) => handleChange('initialDiameter', e.target.value)}
+                inputProps={{ min: 0 }}
               />
             </Grid>
 
@@ -274,6 +305,7 @@ export const TreeForm = ({ tree, mode }: TreeFormProps) => {
                 label="Age (years)"
                 value={formData.age}
                 onChange={(e) => handleChange('age', e.target.value)}
+                inputProps={{ min: 0 }}
               />
             </Grid>
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Box,
   Card,
@@ -17,6 +17,7 @@ import {
   InputLabel,
   CircularProgress,
   Alert,
+  Snackbar,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -29,22 +30,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { treesService } from '../../services/trees.service';
 import { Tree, TreeStatus, HealthStatus } from '../../types/tree.types';
 import { useNavigate } from 'react-router-dom';
-
-const statusColors: Record<TreeStatus, 'default' | 'primary' | 'secondary' | 'success' | 'error'> = {
-  ordered: 'default',
-  in_transit: 'primary',
-  in_nursery: 'secondary',
-  planted: 'success',
-  deceased: 'error',
-};
-
-const healthColors: Record<HealthStatus, 'success' | 'info' | 'warning' | 'error'> = {
-  excellent: 'success',
-  good: 'success',
-  fair: 'warning',
-  poor: 'error',
-  critical: 'error',
-};
+import { statusColors, healthColors } from '../../constants/tree-colors';
 
 export const TreeList = () => {
   const navigate = useNavigate();
@@ -52,6 +38,7 @@ export const TreeList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<TreeStatus | 'all'>('all');
   const [healthFilter, setHealthFilter] = useState<HealthStatus | 'all'>('all');
+  const [deleteError, setDeleteError] = useState<string>('');
 
   const { data: trees, isLoading, error } = useQuery({
     queryKey: ['trees'],
@@ -63,29 +50,35 @@ export const TreeList = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['trees'] });
     },
+    onError: (error: any) => {
+      setDeleteError(error?.message || 'Failed to delete tree. Please try again.');
+    },
   });
 
   const handleDelete = async (id: string, species: string) => {
     if (window.confirm(`Are you sure you want to delete ${species}?`)) {
+      setDeleteError('');
       try {
         await deleteMutation.mutateAsync(id);
       } catch (error) {
-        console.error('Failed to delete tree:', error);
+        // Error is handled by onError callback
       }
     }
   };
 
-  const filteredTrees = trees?.filter((tree) => {
-    const matchesSearch =
-      tree.species.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      tree.commonName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      tree.supplierName.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'all' || tree.status === statusFilter;
-    const matchesHealth = healthFilter === 'all' || tree.healthStatus === healthFilter;
+  const filteredTrees = useMemo(() => {
+    return trees?.filter((tree) => {
+      const matchesSearch =
+        tree.species.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        tree.commonName?.toLowerCase()?.includes(searchTerm.toLowerCase()) ||
+        tree.supplierName.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesStatus = statusFilter === 'all' || tree.status === statusFilter;
+      const matchesHealth = healthFilter === 'all' || tree.healthStatus === healthFilter;
 
-    return matchesSearch && matchesStatus && matchesHealth;
-  });
+      return matchesSearch && matchesStatus && matchesHealth;
+    });
+  }, [trees, searchTerm, statusFilter, healthFilter]);
 
   if (isLoading) {
     return (
@@ -254,6 +247,13 @@ export const TreeList = () => {
           ))}
         </Grid>
       )}
+
+      <Snackbar
+        open={!!deleteError}
+        autoHideDuration={6000}
+        onClose={() => setDeleteError('')}
+        message={deleteError}
+      />
     </Box>
   );
 };
