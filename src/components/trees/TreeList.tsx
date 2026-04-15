@@ -28,7 +28,7 @@ import {
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { treesService } from '../../services/trees.service';
-import { Tree, TreeStatus, HealthStatus } from '../../types/tree.types';
+import { TreeStatus, HealthStatus } from '../../types/tree.types';
 import { useNavigate } from 'react-router-dom';
 import { statusColors, healthColors } from '../../constants/tree-colors';
 

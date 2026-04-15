@@ -10,7 +10,6 @@ import {
   where,
   orderBy,
   Timestamp,
-  FirestoreError,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { Tree } from '../types/tree.types';
