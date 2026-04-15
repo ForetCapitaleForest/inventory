@@ -7,6 +7,12 @@ import { SignupForm } from './components/auth/SignupForm';
 import { PasswordReset } from './components/auth/PasswordReset';
 import { AppLayout } from './components/layout/AppLayout';
 import { Dashboard } from './components/dashboard/Dashboard';
+import { TreeList } from './components/trees/TreeList';
+import { AddTree } from './components/trees/AddTree';
+import { EditTree } from './components/trees/EditTree';
+import { TreeDetail } from './components/trees/TreeDetail';
+import { SupplierList } from './components/suppliers/SupplierList';
+import { LocationList } from './components/locations/LocationList';
 import { ReactNode } from 'react';
 
 // Create theme
@@ -78,9 +84,12 @@ function App() {
               >
                 <Route index element={<Navigate to="/dashboard" />} />
                 <Route path="dashboard" element={<Dashboard />} />
-                <Route path="trees" element={<div>Trees Page (Coming Soon)</div>} />
-                <Route path="suppliers" element={<div>Suppliers Page (Coming Soon)</div>} />
-                <Route path="locations" element={<div>Locations Page (Coming Soon)</div>} />
+                <Route path="trees" element={<TreeList />} />
+                <Route path="trees/new" element={<AddTree />} />
+                <Route path="trees/:id" element={<TreeDetail />} />
+                <Route path="trees/:id/edit" element={<EditTree />} />
+                <Route path="suppliers" element={<SupplierList />} />
+                <Route path="locations" element={<LocationList />} />
                 <Route path="reports" element={<div>Reports Page (Coming Soon)</div>} />
               </Route>
             </Routes>
