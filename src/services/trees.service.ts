@@ -106,8 +106,6 @@ export const treesService = {
    */
   async create(tree: Omit<Tree, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
     try {
-      console.log('TreeService.create called with:', tree);
-      
       // Remove undefined values - Firestore doesn't accept them
       const cleanedTree = Object.entries(tree).reduce((acc, [key, value]) => {
         if (value !== undefined) {
@@ -116,19 +114,13 @@ export const treesService = {
         return acc;
       }, {} as any);
       
-      console.log('Cleaned tree data (undefined removed):', cleanedTree);
-      
       const docRef = await addDoc(collection(db, TREES_COLLECTION), {
         ...cleanedTree,
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
       });
-      console.log('TreeService.create success, ID:', docRef.id);
       return docRef.id;
     } catch (error: any) {
-      console.error('TreeService.create error:', error);
-      console.error('Error code:', error?.code);
-      console.error('Error message:', error?.message);
       throw new TreeServiceError(
         `Failed to create tree: ${error?.message || error?.code || 'Unknown error'}`,
         error

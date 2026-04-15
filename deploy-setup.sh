@@ -7,28 +7,9 @@ echo "🌲 Tree Inventory - GitHub Pages Deployment Setup"
 echo "=================================================="
 echo ""
 
-# Check if .env.production exists and has values
-if [ ! -f .env.production ]; then
-    echo "❌ Error: .env.production file not found!"
-    echo "Please create it by copying .env.local:"
-    echo "  cp .env.local .env.production"
-    exit 1
-fi
-
-# Check if Firebase config is set
-if grep -q "your_api_key_here" .env.production; then
-    echo "⚠️  Warning: .env.production still has placeholder values!"
-    echo ""
-    echo "Please update .env.production with your actual Firebase configuration:"
-    echo "  1. Open .env.production"
-    echo "  2. Replace all 'your_*_here' values with your Firebase config"
-    echo "  3. Save the file"
-    echo "  4. Run this script again"
-    echo ""
-    exit 1
-fi
-
-echo "✅ .env.production configured"
+# Note: .env.production is no longer needed for deployment
+# Firebase credentials are now stored in GitHub Secrets
+echo "ℹ️  Firebase credentials will be loaded from GitHub Secrets during deployment"
 echo ""
 
 # Check if gh-pages is installed
@@ -63,8 +44,9 @@ echo "========================"
 echo ""
 echo "Before deploying, make sure you've done the following:"
 echo ""
-echo "1. ✅ Firebase Configuration"
-echo "   - .env.production has your Firebase config"
+echo "1. 🔐 GitHub Secrets Setup"
+echo "   - Go to: https://github.com/ForetCapitaleForest/inventory/settings/secrets/actions"
+echo "   - Add all VITE_FIREBASE_* secrets with your Firebase config"
 echo ""
 echo "2. 🔐 Firebase Console Setup"
 echo "   - Go to: https://console.firebase.google.com"

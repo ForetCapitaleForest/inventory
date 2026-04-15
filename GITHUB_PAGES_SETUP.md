@@ -4,14 +4,18 @@ Follow these steps to deploy your Tree Inventory app to GitHub Pages.
 
 ## 🚀 Quick Start (5 minutes)
 
-### Step 1: Copy Firebase Configuration
+### Step 1: Set Up GitHub Secrets
 
-```bash
-# Copy your Firebase config to production environment
-cp .env.local .env.production
-```
+1. Go to https://github.com/ForetCapitaleForest/inventory/settings/secrets/actions
+2. Click **New repository secret** and add each of these secrets with your Firebase values:
+   - `VITE_FIREBASE_API_KEY`
+   - `VITE_FIREBASE_AUTH_DOMAIN`
+   - `VITE_FIREBASE_PROJECT_ID`
+   - `VITE_FIREBASE_STORAGE_BUCKET`
+   - `VITE_FIREBASE_MESSAGING_SENDER_ID`
+   - `VITE_FIREBASE_APP_ID`
 
-Then edit `.env.production` - the values are already there, just verify they're correct.
+**Where to find these values:** Firebase Console → Project Settings → Your apps
 
 ### Step 2: Configure Firebase
 
@@ -21,7 +25,18 @@ Then edit `.env.production` - the values are already there, just verify they're 
 4. Click **Add domain** and enter: `foretcapitaleforest.github.io`
 5. Click **Add**
 
-### Step 3: Enable GitHub Pages
+### Step 3: Configure Local Development (Optional)
+
+If you need to build locally:
+```bash
+# Copy the example file
+cp .env.production.example .env.production
+
+# Edit .env.production with your Firebase credentials
+# This file is gitignored and won't be committed
+```
+
+### Step 4: Enable GitHub Pages
 
 1. Go to https://github.com/ForetCapitaleForest/inventory/settings/pages
 2. Under **Source**, select:
