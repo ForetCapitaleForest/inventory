@@ -57,20 +57,39 @@ export const TreeForm = ({ tree, mode }: TreeFormProps) => {
 
   const createMutation = useMutation({
     mutationFn: async (data: { trees: Omit<Tree, 'id' | 'createdAt' | 'updatedAt'>[] }) => {
-      const promises = data.trees.map(tree => treesService.create(tree));
-      return Promise.all(promises);
+      console.log('Creating trees:', data.trees.length, 'tree(s)');
+      const promises = data.trees.map((tree, index) => {
+        console.log(`Creating tree ${index + 1}:`, tree);
+        return treesService.create(tree);
+      });
+      const results = await Promise.all(promises);
+      console.log('Successfully created tree IDs:', results);
+      return results;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('Create mutation success, created', data.length, 'tree(s)');
       queryClient.invalidateQueries({ queryKey: ['trees'] });
       navigate('/trees');
+    },
+    onError: (error: any) => {
+      console.error('Create mutation error:', error);
+      setError(error?.message || 'Failed to create tree(s)');
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<Tree> }) => treesService.update(id, data),
+    mutationFn: ({ id, data }: { id: string; data: Partial<Tree> }) => {
+      console.log('Updating tree:', id, data);
+      return treesService.update(id, data);
+    },
     onSuccess: () => {
+      console.log('Update mutation success');
       queryClient.invalidateQueries({ queryKey: ['trees'] });
       navigate('/trees');
+    },
+    onError: (error: any) => {
+      console.error('Update mutation error:', error);
+      setError(error?.message || 'Failed to update tree');
     },
   });
 
@@ -80,12 +99,15 @@ export const TreeForm = ({ tree, mode }: TreeFormProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Form submitted, mode:', mode);
+    console.log('Form data:', formData);
     setError('');
     setLoading(true);
 
     try {
       // Validate required fields
       if (!formData.species || !formData.provenance || !formData.supplierName) {
+        console.error('Validation failed: missing required fields');
         setError('Please fill in all required fields');
         return;
       }
@@ -151,15 +173,20 @@ export const TreeForm = ({ tree, mode }: TreeFormProps) => {
         createdBy: user?.uid || UNKNOWN_USER,
       };
 
+      console.log('Tree data prepared:', treeData);
+
       if (mode === 'create') {
         // Create multiple trees if quantity > 1
         const quantity = parseInt(formData.quantity) || 1;
+        console.log('Creating', quantity, 'tree(s)');
         const trees = Array.from({ length: quantity }, () => ({ ...treeData }));
         await createMutation.mutateAsync({ trees });
       } else if (tree) {
+        console.log('Updating existing tree');
         await updateMutation.mutateAsync({ id: tree.id, data: treeData });
       }
     } catch (err: any) {
+      console.error('Submit error:', err);
       setError(err.message || 'Failed to save tree');
     } finally {
       setLoading(false);

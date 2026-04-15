@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "homepage": "https://yourusername.github.io/inventory",
+  "homepage": "https://ForetCapitaleForest.github.io/inventory",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",

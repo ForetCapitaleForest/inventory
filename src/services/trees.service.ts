@@ -106,14 +106,33 @@ export const treesService = {
    */
   async create(tree: Omit<Tree, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
     try {
+      console.log('TreeService.create called with:', tree);
+      
+      // Remove undefined values - Firestore doesn't accept them
+      const cleanedTree = Object.entries(tree).reduce((acc, [key, value]) => {
+        if (value !== undefined) {
+          acc[key] = value;
+        }
+        return acc;
+      }, {} as any);
+      
+      console.log('Cleaned tree data (undefined removed):', cleanedTree);
+      
       const docRef = await addDoc(collection(db, TREES_COLLECTION), {
-        ...tree,
+        ...cleanedTree,
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
       });
+      console.log('TreeService.create success, ID:', docRef.id);
       return docRef.id;
-    } catch (error) {
-      throw new TreeServiceError('Failed to create tree', error);
+    } catch (error: any) {
+      console.error('TreeService.create error:', error);
+      console.error('Error code:', error?.code);
+      console.error('Error message:', error?.message);
+      throw new TreeServiceError(
+        `Failed to create tree: ${error?.message || error?.code || 'Unknown error'}`,
+        error
+      );
     }
   },
 
@@ -122,9 +141,17 @@ export const treesService = {
    */
   async update(id: string, updates: Partial<Tree>): Promise<void> {
     try {
+      // Remove undefined values - Firestore doesn't accept them
+      const cleanedUpdates = Object.entries(updates).reduce((acc, [key, value]) => {
+        if (value !== undefined) {
+          acc[key] = value;
+        }
+        return acc;
+      }, {} as any);
+      
       const docRef = doc(db, TREES_COLLECTION, id);
       await updateDoc(docRef, {
-        ...updates,
+        ...cleanedUpdates,
         updatedAt: Timestamp.now(),
       });
     } catch (error) {
