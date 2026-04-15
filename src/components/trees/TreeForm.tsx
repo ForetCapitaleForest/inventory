@@ -52,10 +52,14 @@ export const TreeForm = ({ tree, mode }: TreeFormProps) => {
     healthStatus: tree?.healthStatus || 'good' as HealthStatus,
     soilConditions: tree?.soilConditions || '',
     notes: tree?.notes || '',
+    quantity: '1',
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: Omit<Tree, 'id' | 'createdAt' | 'updatedAt'>) => treesService.create(data),
+    mutationFn: async (data: { trees: Omit<Tree, 'id' | 'createdAt' | 'updatedAt'>[] }) => {
+      const promises = data.trees.map(tree => treesService.create(tree));
+      return Promise.all(promises);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['trees'] });
       navigate('/trees');
@@ -92,6 +96,7 @@ export const TreeForm = ({ tree, mode }: TreeFormProps) => {
         { value: formData.initialDiameter, name: 'Initial Diameter' },
         { value: formData.age, name: 'Age' },
         { value: formData.cost, name: 'Cost' },
+        { value: formData.quantity, name: 'Quantity' },
       ];
 
       for (const field of numericFields) {
@@ -99,6 +104,18 @@ export const TreeForm = ({ tree, mode }: TreeFormProps) => {
           setError(`${field.name} cannot be negative`);
           return;
         }
+      }
+
+      // Validate quantity is at least 1
+      const quantity = parseInt(formData.quantity) || 1;
+      if (quantity < 1) {
+        setError('Quantity must be at least 1');
+        return;
+      }
+
+      if (mode === 'edit' && quantity > 1) {
+        setError('Cannot set quantity when editing an existing tree');
+        return;
       }
 
       // Validate date logic
@@ -135,7 +152,10 @@ export const TreeForm = ({ tree, mode }: TreeFormProps) => {
       };
 
       if (mode === 'create') {
-        await createMutation.mutateAsync(treeData);
+        // Create multiple trees if quantity > 1
+        const quantity = parseInt(formData.quantity) || 1;
+        const trees = Array.from({ length: quantity }, () => ({ ...treeData }));
+        await createMutation.mutateAsync({ trees });
       } else if (tree) {
         await updateMutation.mutateAsync({ id: tree.id, data: treeData });
       }
@@ -161,9 +181,31 @@ export const TreeForm = ({ tree, mode }: TreeFormProps) => {
           </Alert>
         )}
 
+        {mode === 'create' && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            <Typography variant="body2">
+              <strong>Batch Addition:</strong> Set quantity to add multiple trees of the same species at once.
+            </Typography>
+          </Alert>
+        )}
+
         <form onSubmit={handleSubmit}>
           <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
+            {mode === 'create' && (
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  type="number"
+                  label="Quantity"
+                  value={formData.quantity}
+                  onChange={(e) => handleChange('quantity', e.target.value)}
+                  inputProps={{ min: 1 }}
+                  helperText="Number of identical trees to add"
+                />
+              </Grid>
+            )}
+
+            <Grid item xs={12} md={mode === 'create' ? 6 : 6}>
               <TextField
                 fullWidth
                 required
@@ -368,7 +410,11 @@ export const TreeForm = ({ tree, mode }: TreeFormProps) => {
                   startIcon={loading ? <CircularProgress size={20} /> : <SaveIcon />}
                   disabled={loading}
                 >
-                  {loading ? 'Saving...' : mode === 'create' ? 'Add Tree' : 'Save Changes'}
+                  {loading
+                    ? 'Saving...'
+                    : mode === 'create'
+                      ? `Add ${parseInt(formData.quantity) > 1 ? `${formData.quantity} Trees` : 'Tree'}`
+                      : 'Save Changes'}
                 </Button>
               </Box>
             </Grid>
